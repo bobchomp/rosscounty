@@ -23,15 +23,16 @@ src/app/admin/login/    Admin sign-in (Supabase Auth, email + password).
 src/app/admin/(protected)/
                         Admin panel pages (Dashboard, News, Fixtures, Squads,
                         Tickets, Club, Commercial, Hospitality, Settings),
-                        guarded by Supabase auth. Fixtures & Results and
-                        Settings (current competition) are wired up to
-                        Supabase; the rest are still placeholders.
+                        guarded by Supabase auth. Fixtures & Results (which
+                        also holds the current-competition and API-Football
+                        sync config) is wired up to Supabase; the rest are
+                        still placeholders.
 src/proxy.ts            Rewrites the `admin.` subdomain to /admin, and
                         refreshes the Supabase session cookie. (Next.js 16's
                         replacement for middleware.ts.)
 src/lib/supabase/       Browser + server Supabase client helpers.
 src/lib/fixtures/       Types + read queries shared by the public Fixtures
-                        page and the admin Fixtures/Settings pages.
+                        page and the admin Fixtures & Results page.
 src/lib/nav.ts          Single source of truth for the public + admin nav.
 supabase/migrations/    SQL schema (competitions, site_settings, fixtures,
                         league_table_rows) — run these against your Supabase
@@ -66,9 +67,8 @@ notice instead of crashing — the public site works either way.
 4. Run the SQL in `supabase/migrations/` **in order** (0001, then 0002)
    against your project (SQL Editor, or the Supabase CLI) to create the
    fixtures/league table schema.
-5. In `/admin/settings`, pick the club's current competition — this
-   controls what `/admin/fixtures` manages and what the public Fixtures
-   page shows.
+5. In `/admin/fixtures`, pick the club's current competition — this
+   controls what that page manages and what the public Fixtures page shows.
 6. Add the same env vars in Vercel's project settings for production.
 
 ## Admin subdomain on Vercel
@@ -92,8 +92,8 @@ a small "not configured" notice.
 ## Fixtures & League Table
 
 Ross County's own fixtures (not every match in the division) plus a
-manually-entered league table, scoped to whichever competition is picked in
-`/admin/settings`:
+manually-entered league table, scoped to whichever competition is picked at
+the top of `/admin/fixtures`:
 
 - `/admin/fixtures` — add/edit/delete fixtures (opponent, home/away,
   kick-off, ground, result) and league table rows (every team, P/W/D/L/GF/GA/Pts).
@@ -130,7 +130,7 @@ are always returned complete.
    Each result's `id` field is what you need. These aren't hardcoded
    anywhere in the codebase since they should come from the API itself,
    not be guessed.
-4. In `/admin/settings`, enter the season (e.g. `2025` for the 2025/26
+4. In `/admin/fixtures`, enter the season (e.g. `2025` for the 2025/26
    season), Ross County's team ID, and the league ID for each competition
    you might need (only the currently-selected one has to be filled in to
    start syncing).
@@ -143,8 +143,10 @@ are always returned complete.
 - No club branding assets (crest, brand fonts/colours beyond a navy/gold
   placeholder palette, photography) — see "Open questions" below.
 - Other admin CRUD screens (News, Squads, Tickets, Club, Commercial,
-  Hospitality) are placeholders; only Fixtures/Settings, auth and
-  navigation are wired up.
+  Hospitality) are placeholders; only Fixtures & Results, auth and
+  navigation are wired up. Settings itself is still a placeholder — the
+  current-competition and API-Football config live on Fixtures & Results
+  instead, since that's the only page that needs them.
 - Sync errors (bad API key, wrong league ID, etc.) currently show Next's
   generic error page rather than a friendly inline message — fine for an
   admin tool used by one or two people for now, worth improving later.
@@ -163,7 +165,7 @@ are always returned complete.
   Perform feed via SPFL membership? If not, the API-Football sync + manual
   admin entry (see above) is the fallback.
 - **Current competition**: which division is the club playing in right
-  now — set this in `/admin/settings` once confirmed.
+  now — set this in `/admin/fixtures` once confirmed.
 - **News/squads content**: who will supply news articles and squad
   photos/bios?
 - **Admin users**: who needs admin access, and do they need different
