@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0b1f3f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-poppins);
+
+  /* Ross County FC placeholder brand palette — swap for official brand
+     guidelines (Pantone/hex values, secondary colours) when supplied. */
+  --color-club-navy: #0b1f3f;
+  --color-club-navy-dark: #071630;
+  --color-club-navy-light: #16305c;
+  --color-club-gold: #f2b705;
+  --color-club-gold-dark: #c99304;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
