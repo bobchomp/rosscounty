@@ -1,15 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
-
-async function requireAdminClient() {
-  const supabase = await createClient();
-  if (!supabase) {
-    throw new Error("Supabase is not configured.");
-  }
-  return supabase;
-}
+import { requireClient } from "@/lib/supabase/server";
+import { getStandings, getTeamFixtures, mapFixtureStatus } from "@/lib/api-football/client";
 
 function refresh() {
   revalidatePath("/admin/fixtures");
@@ -17,7 +10,7 @@ function refresh() {
 }
 
 export async function addFixture(formData: FormData) {
-  const supabase = await requireAdminClient();
+  const supabase = await requireClient();
 
   const { error } = await supabase.from("fixtures").insert({
     competition_id: String(formData.get("competition_id")),
@@ -32,7 +25,7 @@ export async function addFixture(formData: FormData) {
 }
 
 export async function updateFixtureResult(formData: FormData) {
-  const supabase = await requireAdminClient();
+  const supabase = await requireClient();
 
   const rawHome = formData.get("ross_county_score");
   const rawAway = formData.get("opponent_score");
@@ -51,7 +44,7 @@ export async function updateFixtureResult(formData: FormData) {
 }
 
 export async function deleteFixture(formData: FormData) {
-  const supabase = await requireAdminClient();
+  const supabase = await requireClient();
 
   const { error } = await supabase
     .from("fixtures")
@@ -63,7 +56,7 @@ export async function deleteFixture(formData: FormData) {
 }
 
 export async function addTableRow(formData: FormData) {
-  const supabase = await requireAdminClient();
+  const supabase = await requireClient();
 
   const { error } = await supabase.from("league_table_rows").insert({
     competition_id: String(formData.get("competition_id")),
@@ -83,7 +76,7 @@ export async function addTableRow(formData: FormData) {
 }
 
 export async function updateTableRow(formData: FormData) {
-  const supabase = await requireAdminClient();
+  const supabase = await requireClient();
 
   const { error } = await supabase
     .from("league_table_rows")
@@ -105,7 +98,7 @@ export async function updateTableRow(formData: FormData) {
 }
 
 export async function deleteTableRow(formData: FormData) {
-  const supabase = await requireAdminClient();
+  const supabase = await requireClient();
 
   const { error } = await supabase
     .from("league_table_rows")
@@ -113,5 +106,88 @@ export async function deleteTableRow(formData: FormData) {
     .eq("id", String(formData.get("id")));
 
   if (error) throw new Error(error.message);
+  refresh();
+}
+
+export async function syncFixturesFromApiFootball(formData: FormData) {
+  const supabase = await requireClient();
+
+  const competitionId = String(formData.get("competition_id"));
+  const leagueId = Number(formData.get("league_id"));
+  const season = Number(formData.get("season"));
+  const teamId = Number(formData.get("team_id"));
+
+  const apiFixtures = await getTeamFixtures(leagueId, season, teamId);
+
+  const rows = apiFixtures.map((f) => {
+    const isHome = f.teams.home.id === teamId;
+    return {
+      competition_id: competitionId,
+      api_football_fixture_id: f.fixture.id,
+      opponent: isHome ? f.teams.away.name : f.teams.home.name,
+      venue: isHome ? "home" : "away",
+      ground: f.fixture.venue.name,
+      kickoff_at: f.fixture.date,
+      status: mapFixtureStatus(f.fixture.status.short),
+      ross_county_score: isHome ? f.goals.home : f.goals.away,
+      opponent_score: isHome ? f.goals.away : f.goals.home,
+    };
+  });
+
+  if (rows.length > 0) {
+    const { error } = await supabase
+      .from("fixtures")
+      .upsert(rows, { onConflict: "api_football_fixture_id" });
+    if (error) throw new Error(error.message);
+  }
+
+  const { error: settingsError } = await supabase
+    .from("site_settings")
+    .update({ fixtures_last_synced_at: new Date().toISOString() })
+    .eq("id", "default");
+  if (settingsError) throw new Error(settingsError.message);
+
+  refresh();
+}
+
+export async function syncLeagueTableFromApiFootball(formData: FormData) {
+  const supabase = await requireClient();
+
+  const competitionId = String(formData.get("competition_id"));
+  const leagueId = Number(formData.get("league_id"));
+  const season = Number(formData.get("season"));
+
+  const standings = await getStandings(leagueId, season);
+
+  const { error: deleteError } = await supabase
+    .from("league_table_rows")
+    .delete()
+    .eq("competition_id", competitionId);
+  if (deleteError) throw new Error(deleteError.message);
+
+  if (standings.length > 0) {
+    const rows = standings.map((s) => ({
+      competition_id: competitionId,
+      position: s.rank,
+      team_name: s.team.name,
+      played: s.all.played,
+      won: s.all.win,
+      drawn: s.all.draw,
+      lost: s.all.lose,
+      goals_for: s.all.goals.for,
+      goals_against: s.all.goals.against,
+      points: s.points,
+    }));
+
+    const { error: insertError } = await supabase.from("league_table_rows").insert(rows);
+    if (insertError) throw new Error(insertError.message);
+  }
+
+  const { error: settingsError } = await supabase
+    .from("site_settings")
+    .update({ table_last_synced_at: new Date().toISOString() })
+    .eq("id", "default");
+  if (settingsError) throw new Error(settingsError.message);
+
   refresh();
 }

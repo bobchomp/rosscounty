@@ -7,6 +7,8 @@ import {
   addTableRow,
   deleteFixture,
   deleteTableRow,
+  syncFixturesFromApiFootball,
+  syncLeagueTableFromApiFootball,
   updateFixtureResult,
   updateTableRow,
 } from "./actions";
@@ -32,6 +34,16 @@ function formatKickoff(iso: string) {
 function toDatetimeLocal(date: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function formatSyncedAt(iso: string | null | undefined) {
+  if (!iso) return "Never synced";
+  return `Last synced ${new Date(iso).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
 }
 
 export default async function AdminFixturesPage() {
@@ -77,6 +89,64 @@ export default async function AdminFixturesPage() {
           .
         </p>
       </div>
+
+      <section className="rounded-xl border border-club-navy/10 bg-white p-6">
+        <h2 className="text-lg font-semibold text-club-navy">Sync from API-Football</h2>
+        <p className="mt-1 max-w-2xl text-sm text-neutral-600">
+          Pull the latest fixtures and league table on demand — there&apos;s
+          no automatic daily sync, so run this after a match rather than
+          waiting on a schedule.
+        </p>
+
+        {!currentCompetition.api_football_id || !settings?.api_football_season ? (
+          <p className="mt-4 rounded-md bg-amber-50 p-4 text-sm text-amber-800">
+            Set the season and this competition&apos;s league ID in{" "}
+            <Link href="/admin/settings" className="font-semibold underline">
+              Settings
+            </Link>{" "}
+            before syncing.
+          </p>
+        ) : (
+          <div className="mt-4 flex flex-wrap items-center gap-6">
+            <div>
+              <form action={syncLeagueTableFromApiFootball} className="flex items-center gap-3">
+                <input type="hidden" name="competition_id" value={currentCompetition.id} />
+                <input type="hidden" name="league_id" value={currentCompetition.api_football_id} />
+                <input type="hidden" name="season" value={settings.api_football_season} />
+                <button type="submit" className={buttonClass}>
+                  Pull latest league table
+                </button>
+              </form>
+              <p className="mt-1 text-xs text-neutral-500">{formatSyncedAt(settings.table_last_synced_at)}</p>
+            </div>
+
+            <div>
+              {settings.api_football_team_id ? (
+                <form action={syncFixturesFromApiFootball} className="flex items-center gap-3">
+                  <input type="hidden" name="competition_id" value={currentCompetition.id} />
+                  <input type="hidden" name="league_id" value={currentCompetition.api_football_id} />
+                  <input type="hidden" name="season" value={settings.api_football_season} />
+                  <input type="hidden" name="team_id" value={settings.api_football_team_id} />
+                  <button type="submit" className={buttonClass}>
+                    Pull latest fixtures
+                  </button>
+                </form>
+              ) : (
+                <p className="text-sm text-amber-800">
+                  Set Ross County&apos;s team ID in{" "}
+                  <Link href="/admin/settings" className="font-semibold underline">
+                    Settings
+                  </Link>{" "}
+                  to sync fixtures.
+                </p>
+              )}
+              {settings.api_football_team_id && (
+                <p className="mt-1 text-xs text-neutral-500">{formatSyncedAt(settings.fixtures_last_synced_at)}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
 
       <section className="rounded-xl border border-club-navy/10 bg-white p-6">
         <h2 className="text-lg font-semibold text-club-navy">Add a fixture</h2>

@@ -61,8 +61,9 @@ notice instead of crashing — the public site works either way.
 3. In Supabase Auth, create the admin user(s) who should be able to log in
    at `/admin/login`. There's no self-service sign-up — admin accounts are
    provisioned manually for now.
-4. Run the SQL in `supabase/migrations/` against your project (SQL Editor,
-   or the Supabase CLI) to create the fixtures/league table schema.
+4. Run the SQL in `supabase/migrations/` **in order** (0001, then 0002)
+   against your project (SQL Editor, or the Supabase CLI) to create the
+   fixtures/league table schema.
 5. In `/admin/settings`, pick the club's current competition — this
    controls what `/admin/fixtures` manages and what the public Fixtures
    page shows.
@@ -100,9 +101,37 @@ manually-entered league table, scoped to whichever competition is picked in
 There's no official SPFL/SFA/BBC public API — SPFL's data rights are
 exclusively licensed to Stats Perform/Opta (a commercial B2B feed). Worth
 asking the club whether they already have an Opta feed/widget as part of
-SPFL membership before considering a third-party consumer API (API-Football,
-Sportmonks, etc.) — this schema is written to be filled by either manual
-entry or an automated sync into the same tables later.
+SPFL membership. Absent that, `/admin/fixtures` has two buttons — **Pull
+latest fixtures** and **Pull latest league table** — that call
+[api-football.com](https://www.api-football.com/)'s free tier on demand.
+There's no automatic daily sync by design: press the buttons after a match,
+not on a schedule. Manually-added fixtures are untouched by a sync (only
+rows the API itself created get updated); the league table sync fully
+replaces the table for the current competition each time, since standings
+are always returned complete.
+
+**Setting up the API-Football sync:**
+
+1. Sign up free at [api-football.com](https://www.api-football.com/) (100
+   requests/day, no card required) and grab your API key from the
+   dashboard.
+2. Add it as `API_FOOTBALL_KEY` in `.env.local` (and in Vercel for
+   production). This is separate from Supabase.
+3. Find the league IDs and Ross County's team ID by calling the API
+   directly, e.g.:
+   ```bash
+   curl -H "x-apisports-key: YOUR_KEY" \
+     "https://v3.football.api-sports.io/leagues?search=Scotland"
+   curl -H "x-apisports-key: YOUR_KEY" \
+     "https://v3.football.api-sports.io/teams?name=Ross%20County"
+   ```
+   Each result's `id` field is what you need. These aren't hardcoded
+   anywhere in the codebase since they should come from the API itself,
+   not be guessed.
+4. In `/admin/settings`, enter the season (e.g. `2025` for the 2025/26
+   season), Ross County's team ID, and the league ID for each competition
+   you might need (only the currently-selected one has to be filled in to
+   start syncing).
 
 ## What's intentionally not done yet
 
@@ -114,6 +143,9 @@ entry or an automated sync into the same tables later.
 - Other admin CRUD screens (News, Squads, Tickets, Club, Commercial,
   Hospitality) are placeholders; only Fixtures/Settings, auth and
   navigation are wired up.
+- Sync errors (bad API key, wrong league ID, etc.) currently show Next's
+  generic error page rather than a friendly inline message — fine for an
+  admin tool used by one or two people for now, worth improving later.
 - No automated tests yet.
 
 ## Open questions for the club / before going further
@@ -126,8 +158,8 @@ entry or an automated sync into the same tables later.
 - **Ticketing/payments provider**: who currently sells tickets (e.g. a
   third-party ticketing platform) — integrate vs. link out?
 - **Fixtures/results data**: does the club already have an Opta/Stats
-  Perform feed via SPFL membership? If not, manual entry via the admin
-  panel is the fallback, or a paid third-party API.
+  Perform feed via SPFL membership? If not, the API-Football sync + manual
+  admin entry (see above) is the fallback.
 - **Current competition**: which division is the club playing in right
   now — set this in `/admin/settings` once confirmed.
 - **News/squads content**: who will supply news articles and squad
