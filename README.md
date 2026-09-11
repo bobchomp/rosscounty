@@ -56,8 +56,10 @@ notice instead of crashing — the public site works either way.
 ## Connecting Supabase (when ready)
 
 1. Create a Supabase project.
-2. Copy the Project URL and anon public key into `.env.local`
-   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+2. Copy the Project URL and anon/publishable key into `.env.local`
+   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`). That's
+   the only Supabase config this app needs right now — ignore the
+   `service_role`/secret key for now, nothing here uses it yet.
 3. In Supabase Auth, create the admin user(s) who should be able to log in
    at `/admin/login`. There's no self-service sign-up — admin accounts are
    provisioned manually for now.
