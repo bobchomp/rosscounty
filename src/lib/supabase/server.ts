@@ -34,3 +34,13 @@ export async function createClient() {
     },
   });
 }
+
+/** Like createClient(), but throws instead of returning null — for server
+ * actions that only ever run from an already-guarded admin page. */
+export async function requireClient() {
+  const supabase = await createClient();
+  if (!supabase) {
+    throw new Error("Supabase is not configured.");
+  }
+  return supabase;
+}

@@ -6,9 +6,8 @@ export function SupabaseNotConfigured() {
           Admin panel not connected yet
         </h1>
         <p className="mt-3 text-sm text-amber-900">
-          Add <code>NEXT_PUBLIC_SUPABASE_URL</code>,{" "}
-          <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> and{" "}
-          <code>SUPABASE_SERVICE_ROLE_KEY</code> to your environment (see{" "}
+          Add <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+          <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to your environment (see{" "}
           <code>.env.local.example</code>), then create an admin user in
           Supabase Auth to sign in.
         </p>

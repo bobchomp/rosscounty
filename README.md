@@ -22,12 +22,20 @@ src/app/shop/           Route handler that redirects to the Shopify store
 src/app/admin/login/    Admin sign-in (Supabase Auth, email + password).
 src/app/admin/(protected)/
                         Admin panel pages (Dashboard, News, Fixtures, Squads,
-                        Tickets, Club, Commercial, Hospitality, Settings) —
-                        all placeholder screens, guarded by Supabase auth.
-src/middleware.ts       Rewrites the `admin.` subdomain to /admin, and
-                        refreshes the Supabase session cookie.
+                        Tickets, Club, Commercial, Hospitality, Settings),
+                        guarded by Supabase auth. Fixtures & Results and
+                        Settings (current competition) are wired up to
+                        Supabase; the rest are still placeholders.
+src/proxy.ts            Rewrites the `admin.` subdomain to /admin, and
+                        refreshes the Supabase session cookie. (Next.js 16's
+                        replacement for middleware.ts.)
 src/lib/supabase/       Browser + server Supabase client helpers.
+src/lib/fixtures/       Types + read queries shared by the public Fixtures
+                        page and the admin Fixtures/Settings pages.
 src/lib/nav.ts          Single source of truth for the public + admin nav.
+supabase/migrations/    SQL schema (competitions, site_settings, fixtures,
+                        league_table_rows) — run these against your Supabase
+                        project before the Fixtures feature will show data.
 ```
 
 ## Getting started
@@ -48,16 +56,24 @@ notice instead of crashing — the public site works either way.
 ## Connecting Supabase (when ready)
 
 1. Create a Supabase project.
-2. Copy the Project URL and anon public key into `.env.local`
-   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+2. Copy the Project URL and anon/publishable key into `.env.local`
+   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`). That's
+   the only Supabase config this app needs right now — ignore the
+   `service_role`/secret key for now, nothing here uses it yet.
 3. In Supabase Auth, create the admin user(s) who should be able to log in
    at `/admin/login`. There's no self-service sign-up — admin accounts are
    provisioned manually for now.
-4. Add the same env vars in Vercel's project settings for production.
+4. Run the SQL in `supabase/migrations/` **in order** (0001, then 0002)
+   against your project (SQL Editor, or the Supabase CLI) to create the
+   fixtures/league table schema.
+5. In `/admin/settings`, pick the club's current competition — this
+   controls what `/admin/fixtures` manages and what the public Fixtures
+   page shows.
+6. Add the same env vars in Vercel's project settings for production.
 
 ## Admin subdomain on Vercel
 
-The admin panel is just `/admin` inside the same Next.js app — `src/middleware.ts`
+The admin panel is just `/admin` inside the same Next.js app — `src/proxy.ts`
 rewrites any request whose `Host` header starts with `admin.` into that route
 tree. To go live:
 
@@ -73,13 +89,65 @@ tree. To go live:
 Set that once the Shopify store link is available; until then it redirects to
 a small "not configured" notice.
 
+## Fixtures & League Table
+
+Ross County's own fixtures (not every match in the division) plus a
+manually-entered league table, scoped to whichever competition is picked in
+`/admin/settings`:
+
+- `/admin/fixtures` — add/edit/delete fixtures (opponent, home/away,
+  kick-off, ground, result) and league table rows (every team, P/W/D/L/GF/GA/Pts).
+- `/fixtures` — public page: next match banner, upcoming fixtures, recent
+  results, full league table (Ross County's row highlighted).
+
+There's no official SPFL/SFA/BBC public API — SPFL's data rights are
+exclusively licensed to Stats Perform/Opta (a commercial B2B feed). Worth
+asking the club whether they already have an Opta feed/widget as part of
+SPFL membership. Absent that, `/admin/fixtures` has two buttons — **Pull
+latest fixtures** and **Pull latest league table** — that call
+[api-football.com](https://www.api-football.com/)'s free tier on demand.
+There's no automatic daily sync by design: press the buttons after a match,
+not on a schedule. Manually-added fixtures are untouched by a sync (only
+rows the API itself created get updated); the league table sync fully
+replaces the table for the current competition each time, since standings
+are always returned complete.
+
+**Setting up the API-Football sync:**
+
+1. Sign up free at [api-football.com](https://www.api-football.com/) (100
+   requests/day, no card required) and grab your API key from the
+   dashboard.
+2. Add it as `API_FOOTBALL_KEY` in `.env.local` (and in Vercel for
+   production). This is separate from Supabase.
+3. Find the league IDs and Ross County's team ID by calling the API
+   directly, e.g.:
+   ```bash
+   curl -H "x-apisports-key: YOUR_KEY" \
+     "https://v3.football.api-sports.io/leagues?search=Scotland"
+   curl -H "x-apisports-key: YOUR_KEY" \
+     "https://v3.football.api-sports.io/teams?name=Ross%20County"
+   ```
+   Each result's `id` field is what you need. These aren't hardcoded
+   anywhere in the codebase since they should come from the API itself,
+   not be guessed.
+4. In `/admin/settings`, enter the season (e.g. `2025` for the 2025/26
+   season), Ross County's team ID, and the league ID for each competition
+   you might need (only the currently-selected one has to be filled in to
+   start syncing).
+
 ## What's intentionally not done yet
 
-- No real club content (news, fixtures, squads, ticket prices, etc.) — every
-  public page is a labelled placeholder grid.
+- No real club content (news, squads, ticket prices, etc.) — those pages
+  are still labelled placeholders. Fixtures & League Table is functional
+  (see above) but has no real data entered.
 - No club branding assets (crest, brand fonts/colours beyond a navy/gold
   placeholder palette, photography) — see "Open questions" below.
-- Admin CRUD screens are placeholders; only auth + navigation are wired up.
+- Other admin CRUD screens (News, Squads, Tickets, Club, Commercial,
+  Hospitality) are placeholders; only Fixtures/Settings, auth and
+  navigation are wired up.
+- Sync errors (bad API key, wrong league ID, etc.) currently show Next's
+  generic error page rather than a friendly inline message — fine for an
+  admin tool used by one or two people for now, worth improving later.
 - No automated tests yet.
 
 ## Open questions for the club / before going further
@@ -91,8 +159,12 @@ a small "not configured" notice.
 - **Shop**: the Shopify store URL for the `/shop` redirect.
 - **Ticketing/payments provider**: who currently sells tickets (e.g. a
   third-party ticketing platform) — integrate vs. link out?
-- **Content sourcing**: who will supply news articles, fixtures/results
-  data (manual entry vs. a feed from the SPFL/SFA or a stats provider),
-  and squad photos/bios?
+- **Fixtures/results data**: does the club already have an Opta/Stats
+  Perform feed via SPFL membership? If not, the API-Football sync + manual
+  admin entry (see above) is the fallback.
+- **Current competition**: which division is the club playing in right
+  now — set this in `/admin/settings` once confirmed.
+- **News/squads content**: who will supply news articles and squad
+  photos/bios?
 - **Admin users**: who needs admin access, and do they need different
   permission levels (e.g. editor vs. full admin)?
