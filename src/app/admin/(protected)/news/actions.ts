@@ -24,7 +24,14 @@ async function uploadFeaturedImage(
   return path;
 }
 
-function readArticleFields(formData: FormData) {
+type DisplayStatus = "draft" | "published" | "scheduled";
+
+function readDisplayStatus(formData: FormData): DisplayStatus {
+  const raw = String(formData.get("display_status") || "draft");
+  return raw === "published" || raw === "scheduled" ? raw : "draft";
+}
+
+function readCommonFields(formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const rawSlug = String(formData.get("slug") || "").trim();
 
@@ -35,17 +42,25 @@ function readArticleFields(formData: FormData) {
     excerpt: String(formData.get("excerpt") || "").trim() || null,
     body_html: sanitizeArticleHtml(String(formData.get("body_html") || "")),
     author_name: String(formData.get("author_name") || "Ross County FC").trim() || "Ross County FC",
-    status: String(formData.get("status") || "draft"),
-    publish_at: (() => {
-      const raw = String(formData.get("publish_at") || "");
-      return raw ? new Date(raw).toISOString() : new Date().toISOString();
-    })(),
   };
+}
+
+function readScheduledPublishAt(formData: FormData) {
+  const raw = String(formData.get("publish_at") || "");
+  return raw ? new Date(raw).toISOString() : new Date().toISOString();
 }
 
 export async function createArticle(formData: FormData) {
   const supabase = await requireClient();
-  const fields = readArticleFields(formData);
+  const fields = readCommonFields(formData);
+  const displayStatus = readDisplayStatus(formData);
+
+  // A brand-new article has no "already live" date to preserve, so
+  // draft/published both just use "now" — only "scheduled" needs the
+  // admin-chosen future date.
+  const status = displayStatus === "draft" ? "draft" : "published";
+  const publish_at =
+    displayStatus === "scheduled" ? readScheduledPublishAt(formData) : new Date().toISOString();
 
   const file = formData.get("featured_image");
   const featured_image_path =
@@ -53,7 +68,7 @@ export async function createArticle(formData: FormData) {
 
   const { data, error } = await supabase
     .from("news_articles")
-    .insert({ ...fields, featured_image_path })
+    .insert({ ...fields, status, publish_at, featured_image_path })
     .select("id")
     .single();
 
@@ -66,9 +81,41 @@ export async function createArticle(formData: FormData) {
 export async function updateArticle(formData: FormData) {
   const supabase = await requireClient();
   const id = String(formData.get("id"));
-  const fields = readArticleFields(formData);
+  const fields = readCommonFields(formData);
+  const displayStatus = readDisplayStatus(formData);
 
-  const update: Record<string, unknown> = { ...fields, updated_at: new Date().toISOString() };
+  const status = displayStatus === "draft" ? "draft" : "published";
+
+  let publish_at: string;
+  if (displayStatus === "scheduled") {
+    publish_at = readScheduledPublishAt(formData);
+  } else {
+    // Editing a draft/typo-fix shouldn't silently change when an already-live
+    // article "was published" — only set publish_at to "now" the moment it
+    // actually goes live for the first time; otherwise keep its existing date.
+    const { data: existing } = await supabase
+      .from("news_articles")
+      .select("status, publish_at")
+      .eq("id", id)
+      .maybeSingle();
+
+    const wasAlreadyLive =
+      existing?.status === "published" &&
+      Boolean(existing.publish_at) &&
+      new Date(existing.publish_at).getTime() <= Date.now();
+
+    publish_at =
+      displayStatus === "published" && !wasAlreadyLive
+        ? new Date().toISOString()
+        : (existing?.publish_at ?? new Date().toISOString());
+  }
+
+  const update: Record<string, unknown> = {
+    ...fields,
+    status,
+    publish_at,
+    updated_at: new Date().toISOString(),
+  };
 
   const file = formData.get("featured_image");
   if (file instanceof File && file.size > 0) {

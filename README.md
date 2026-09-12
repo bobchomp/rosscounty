@@ -167,7 +167,8 @@ item in the admin sidebar is a dropdown with two sub-pages:
   button.
 - `/admin/news/new` and `/admin/news/[id]/edit` — a shared form: title,
   slug (auto-generated from the title if left blank), category, status
-  (draft/published), publish date/time, author, excerpt, featured image
+  (Draft / Published / Scheduled — the publish date/time field only
+  appears when Scheduled is picked), author, excerpt, featured image
   upload, and a rich text (TipTap) editor with inline image upload.
 - `/admin/news/categories` (**Categories**) — add, rename, reorder
   (sort order) and delete categories. Categories aren't a fixed list —
@@ -180,10 +181,17 @@ item in the admin sidebar is a dropdown with two sub-pages:
 A few things worth knowing about how this is wired up:
 
 - **Scheduling has no background job.** An article is only ever `draft` or
-  `published` in the database — "scheduled" is just published with a future
-  publish date/time, and public queries filter on
+  `published` in the database — "Scheduled" in the admin form is a display
+  concept, not a real status value: picking it just sets `status='published'`
+  with a future `publish_at`, and public queries filter on
   `publish_at <= now()`. So a scheduled article simply starts matching that
-  filter once its time passes; nothing needs to run to "activate" it.
+  filter once its time passes; nothing needs to run to "activate" it. The
+  edit form re-derives which of the three the article "is" from those two
+  columns (`getDisplayStatus` in `src/lib/news/status.ts`).
+- **Editing a live article doesn't bump its publish date.** Saving an
+  already-published article as Published again keeps its original
+  `publish_at` — the date/time only changes when Scheduled is used, or the
+  moment an article actually goes live for the first time.
 - **Images go through Supabase Storage** (a `news-images` public bucket,
   created by migration `0003`), not Next.js's image optimisation — articles
   use a plain `<img>` tag rather than `next/image`, since wiring up
