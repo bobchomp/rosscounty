@@ -1,4 +1,6 @@
 import { RichTextEditor } from "./rich-text-editor";
+import { ArticleStatusFields } from "./article-status-fields";
+import { getDisplayStatus } from "@/lib/news/status";
 import type { NewsArticleWithCategory, NewsCategory } from "@/lib/news/types";
 
 const inputClass =
@@ -6,12 +8,6 @@ const inputClass =
 const labelClass = "block text-sm font-medium text-neutral-700";
 const buttonClass =
   "rounded-md bg-club-navy px-4 py-2 text-sm font-semibold text-white hover:bg-club-navy-light";
-
-function toDatetimeLocal(iso: string) {
-  const date = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
 
 export function NewsArticleForm({
   categories,
@@ -70,53 +66,9 @@ export function NewsArticleForm({
             ))}
           </select>
         </div>
-        <div>
-          <label className={labelClass} htmlFor="status">Status</label>
-          <select
-            id="status"
-            name="status"
-            defaultValue={article?.status ?? "draft"}
-            className={`mt-1 ${inputClass}`}
-          >
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelClass} htmlFor="publish_at">Publish date/time</label>
-          <input
-            id="publish_at"
-            name="publish_at"
-            type="datetime-local"
-            defaultValue={toDatetimeLocal(article?.publish_at ?? new Date().toISOString())}
-            className={`mt-1 ${inputClass}`}
-          />
-          <p className="mt-1 text-xs text-neutral-500">
-            A future date + Published = scheduled to go live then.
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <label className={labelClass} htmlFor="author_name">Author</label>
-        <input
-          id="author_name"
-          name="author_name"
-          defaultValue={article?.author_name ?? "Ross County FC"}
-          className={`mt-1 max-w-xs ${inputClass}`}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass} htmlFor="excerpt">
-          Excerpt (short summary shown on article cards)
-        </label>
-        <textarea
-          id="excerpt"
-          name="excerpt"
-          rows={2}
-          defaultValue={article?.excerpt ?? ""}
-          className={`mt-1 ${inputClass}`}
+        <ArticleStatusFields
+          initialStatus={article ? getDisplayStatus(article.status, article.publish_at) : "draft"}
+          initialPublishAt={article?.publish_at}
         />
       </div>
 

@@ -52,9 +52,7 @@ export default async function NewsArticlePage(props: PageProps<"/news/[slug]">) 
         </p>
       )}
       <h1 className="mt-2 text-3xl font-bold text-club-navy sm:text-4xl">{article.title}</h1>
-      <p className="mt-3 text-sm text-neutral-500">
-        {formatDate(article.publish_at)} · {article.author_name}
-      </p>
+      <p className="mt-3 text-sm text-neutral-500">{formatDate(article.publish_at)}</p>
 
       {imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element

@@ -43,6 +43,7 @@ supabase/migrations/    SQL schema — run these, in order, against your
                           0001 — fixtures, league table, site_settings
                           0002 — API-Football sync config
                           0003 — news articles, categories, image storage
+                          0004 — drops the news author_name column
 ```
 
 ## Getting started
@@ -70,9 +71,8 @@ notice instead of crashing — the public site works either way.
 3. In Supabase Auth, create the admin user(s) who should be able to log in
    at `/admin/login`. There's no self-service sign-up — admin accounts are
    provisioned manually for now.
-4. Run the SQL in `supabase/migrations/` **in order** (0001, then 0002)
-   against your project (SQL Editor, or the Supabase CLI) to create the
-   fixtures/league table schema.
+4. Run the SQL in `supabase/migrations/` **in numeric order** (0001 through
+   the latest) against your project (SQL Editor, or the Supabase CLI).
 5. In `/admin/fixtures`, pick the club's current competition — this
    controls what that page manages and what the public Fixtures page shows.
 6. Add the same env vars in Vercel's project settings for production.
@@ -167,8 +167,12 @@ item in the admin sidebar is a dropdown with two sub-pages:
   button.
 - `/admin/news/new` and `/admin/news/[id]/edit` — a shared form: title,
   slug (auto-generated from the title if left blank), category, status
-  (draft/published), publish date/time, author, excerpt, featured image
-  upload, and a rich text (TipTap) editor with inline image upload.
+  (Draft / Published / Scheduled — the publish date/time field only
+  appears when Scheduled is picked), featured image upload, and a rich
+  text (TipTap) editor with inline image upload. No author field (a single
+  club feed doesn't need a byline) and no manual excerpt field — the
+  card/meta-description summary is auto-derived from the start of the
+  body text on save (`extractExcerpt` in `src/lib/news/excerpt.ts`).
 - `/admin/news/categories` (**Categories**) — add, rename, reorder
   (sort order) and delete categories. Categories aren't a fixed list —
   admins manage them here; deleting one that still has articles assigned
@@ -180,10 +184,17 @@ item in the admin sidebar is a dropdown with two sub-pages:
 A few things worth knowing about how this is wired up:
 
 - **Scheduling has no background job.** An article is only ever `draft` or
-  `published` in the database — "scheduled" is just published with a future
-  publish date/time, and public queries filter on
+  `published` in the database — "Scheduled" in the admin form is a display
+  concept, not a real status value: picking it just sets `status='published'`
+  with a future `publish_at`, and public queries filter on
   `publish_at <= now()`. So a scheduled article simply starts matching that
-  filter once its time passes; nothing needs to run to "activate" it.
+  filter once its time passes; nothing needs to run to "activate" it. The
+  edit form re-derives which of the three the article "is" from those two
+  columns (`getDisplayStatus` in `src/lib/news/status.ts`).
+- **Editing a live article doesn't bump its publish date.** Saving an
+  already-published article as Published again keeps its original
+  `publish_at` — the date/time only changes when Scheduled is used, or the
+  moment an article actually goes live for the first time.
 - **Images go through Supabase Storage** (a `news-images` public bucket,
   created by migration `0003`), not Next.js's image optimisation — articles
   use a plain `<img>` tag rather than `next/image`, since wiring up
