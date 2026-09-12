@@ -25,18 +25,24 @@ src/app/admin/(protected)/
                         Tickets, Club, Commercial, Hospitality, Settings),
                         guarded by Supabase auth. Fixtures & Results (which
                         also holds the current-competition and API-Football
-                        sync config) is wired up to Supabase; the rest are
-                        still placeholders.
+                        sync config) and News are wired up to Supabase; the
+                        rest are still placeholders.
 src/proxy.ts            Rewrites the `admin.` subdomain to /admin, and
                         refreshes the Supabase session cookie. (Next.js 16's
                         replacement for middleware.ts.)
 src/lib/supabase/       Browser + server Supabase client helpers.
 src/lib/fixtures/       Types + read queries shared by the public Fixtures
                         page and the admin Fixtures & Results page.
+src/lib/news/           Types, read queries, slug helper and status-label
+                        helper shared by the public News pages and the
+                        admin News CRUD.
 src/lib/nav.ts          Single source of truth for the public + admin nav.
-supabase/migrations/    SQL schema (competitions, site_settings, fixtures,
-                        league_table_rows) — run these against your Supabase
-                        project before the Fixtures feature will show data.
+supabase/migrations/    SQL schema — run these, in order, against your
+                        Supabase project before the corresponding feature
+                        will show data:
+                          0001 — fixtures, league table, site_settings
+                          0002 — API-Football sync config
+                          0003 — news articles, categories, image storage
 ```
 
 ## Getting started
@@ -151,21 +157,61 @@ names alone). Until then:
 - Manual entry via the "Add a fixture" / "League table" forms on the same
   page works regardless of plan, and is the fallback either way.
 
+## News
+
+Full CMS for news articles, with individual pages per article:
+
+- `/admin/news` — list of all articles (draft/scheduled/published, newest
+  edited first), with a **New article** button.
+- `/admin/news/new` and `/admin/news/[id]/edit` — a shared form: title,
+  slug (auto-generated from the title if left blank), category, status
+  (draft/published), publish date/time, author, excerpt, featured image
+  upload, and a rich text (TipTap) editor with inline image upload.
+- `/news` — public list, filterable by category pill.
+- `/news/[slug]` — public article page.
+
+A few things worth knowing about how this is wired up:
+
+- **Scheduling has no background job.** An article is only ever `draft` or
+  `published` in the database — "scheduled" is just published with a future
+  publish date/time, and public queries filter on
+  `publish_at <= now()`. So a scheduled article simply starts matching that
+  filter once its time passes; nothing needs to run to "activate" it.
+- **Images go through Supabase Storage** (a `news-images` public bucket,
+  created by migration `0003`), not Next.js's image optimisation — articles
+  use a plain `<img>` tag rather than `next/image`, since wiring up
+  `next/image` for a Supabase Storage domain adds config for a mock site
+  that doesn't need it yet. Worth revisiting once this is a real production
+  site with real traffic.
+- **Article body HTML is sanitised with DOMPurify when saved** (server-side,
+  in the create/update actions), not when rendered — so it's safe to render
+  directly on the public article page without re-sanitising on every page
+  view.
+- **Rich text editor uses TipTap.** Featured images upload through the
+  normal form (handled server-side, in the same request as saving the
+  article); inline images (inserted via the editor's toolbar) upload
+  directly from the browser to Supabase Storage the moment you pick a file,
+  since the editor needs to show the image immediately rather than waiting
+  for the whole form to submit.
+
 ## What's intentionally not done yet
 
-- No real club content (news, squads, ticket prices, etc.) — those pages
-  are still labelled placeholders. Fixtures & League Table is functional
-  (see above) but has no real data entered.
+- No real club content (squads, ticket prices, etc.) — those pages are
+  still labelled placeholders. Fixtures & League Table and News are
+  functional (see above) but have no real data entered.
 - No club branding assets (crest, brand fonts/colours beyond a navy/gold
   placeholder palette, photography) — see "Open questions" below.
-- Other admin CRUD screens (News, Squads, Tickets, Club, Commercial,
-  Hospitality) are placeholders; only Fixtures & Results, auth and
-  navigation are wired up. Settings itself is still a placeholder — the
-  current-competition and API-Football config live on Fixtures & Results
-  instead, since that's the only page that needs them.
-- Sync errors (bad API key, wrong league ID, etc.) currently show Next's
-  generic error page rather than a friendly inline message — fine for an
-  admin tool used by one or two people for now, worth improving later.
+- Other admin CRUD screens (Squads, Tickets, Club, Commercial, Hospitality)
+  are placeholders; only Fixtures & Results, News, auth and navigation are
+  wired up. Settings itself is still a placeholder — the current-competition
+  and API-Football config live on Fixtures & Results instead, since that's
+  the only page that needs them.
+- Sync errors (bad API key, wrong league ID, etc.) and article save errors
+  (e.g. a duplicate slug) currently show Next's generic error page rather
+  than a friendly inline message — fine for an admin tool used by one or
+  two people for now, worth improving later.
+- News has no image library/media manager — every upload is a one-off, there's
+  no way to reuse a previously-uploaded image across articles.
 - No automated tests yet.
 
 ## Open questions for the club / before going further
@@ -187,5 +233,8 @@ names alone). Until then:
   now — set this in `/admin/fixtures` once confirmed.
 - **News/squads content**: who will supply news articles and squad
   photos/bios?
+- **News categories**: the four seeded categories (Club News, Match Report,
+  Press Release, Interview) are a starting guess — confirm these match how
+  the club actually wants to organise articles.
 - **Admin users**: who needs admin access, and do they need different
   permission levels (e.g. editor vs. full admin)?
