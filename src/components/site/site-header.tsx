@@ -16,7 +16,7 @@ export function SiteHeader() {
             RCFC
           </span>
           <span className="text-lg font-semibold tracking-wide">
-            Ross County FC
+            Ross County Football Club
           </span>
         </Link>
 

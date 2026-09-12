@@ -7,7 +7,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <p className="text-lg font-semibold text-white">Ross County FC</p>
+            <p className="text-lg font-semibold text-white">Ross County Football Club</p>
             <p className="mt-2 max-w-xs text-sm">
               Placeholder site in development. Club address, contact details
               and social links to be added.
