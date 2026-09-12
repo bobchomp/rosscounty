@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/news/slug";
 import { sanitizeArticleHtml } from "@/lib/news/sanitize";
+import { extractExcerpt } from "@/lib/news/excerpt";
 
 function refresh() {
   revalidatePath("/admin/news");
@@ -34,14 +35,14 @@ function readDisplayStatus(formData: FormData): DisplayStatus {
 function readCommonFields(formData: FormData) {
   const title = String(formData.get("title") || "").trim();
   const rawSlug = String(formData.get("slug") || "").trim();
+  const body_html = sanitizeArticleHtml(String(formData.get("body_html") || ""));
 
   return {
     title,
     slug: slugify(rawSlug || title),
     category_id: String(formData.get("category_id") || "") || null,
-    excerpt: String(formData.get("excerpt") || "").trim() || null,
-    body_html: sanitizeArticleHtml(String(formData.get("body_html") || "")),
-    author_name: String(formData.get("author_name") || "Ross County FC").trim() || "Ross County FC",
+    body_html,
+    excerpt: extractExcerpt(body_html) || null,
   };
 }
 

@@ -73,29 +73,6 @@ export function NewsArticleForm({
       </div>
 
       <div>
-        <label className={labelClass} htmlFor="author_name">Author</label>
-        <input
-          id="author_name"
-          name="author_name"
-          defaultValue={article?.author_name ?? "Ross County FC"}
-          className={`mt-1 max-w-xs ${inputClass}`}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass} htmlFor="excerpt">
-          Excerpt (short summary shown on article cards)
-        </label>
-        <textarea
-          id="excerpt"
-          name="excerpt"
-          rows={2}
-          defaultValue={article?.excerpt ?? ""}
-          className={`mt-1 ${inputClass}`}
-        />
-      </div>
-
-      <div>
         <label className={labelClass} htmlFor="featured_image">
           Featured image {featuredImageUrl ? "(choose a file to replace it)" : ""}
         </label>

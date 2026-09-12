@@ -14,7 +14,6 @@ export type NewsArticle = {
   excerpt: string | null;
   body_html: string;
   featured_image_path: string | null;
-  author_name: string;
   status: NewsStatus;
   publish_at: string;
   created_at: string;

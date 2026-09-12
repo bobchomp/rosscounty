@@ -43,6 +43,7 @@ supabase/migrations/    SQL schema — run these, in order, against your
                           0001 — fixtures, league table, site_settings
                           0002 — API-Football sync config
                           0003 — news articles, categories, image storage
+                          0004 — drops the news author_name column
 ```
 
 ## Getting started
@@ -70,9 +71,8 @@ notice instead of crashing — the public site works either way.
 3. In Supabase Auth, create the admin user(s) who should be able to log in
    at `/admin/login`. There's no self-service sign-up — admin accounts are
    provisioned manually for now.
-4. Run the SQL in `supabase/migrations/` **in order** (0001, then 0002)
-   against your project (SQL Editor, or the Supabase CLI) to create the
-   fixtures/league table schema.
+4. Run the SQL in `supabase/migrations/` **in numeric order** (0001 through
+   the latest) against your project (SQL Editor, or the Supabase CLI).
 5. In `/admin/fixtures`, pick the club's current competition — this
    controls what that page manages and what the public Fixtures page shows.
 6. Add the same env vars in Vercel's project settings for production.
@@ -168,8 +168,11 @@ item in the admin sidebar is a dropdown with two sub-pages:
 - `/admin/news/new` and `/admin/news/[id]/edit` — a shared form: title,
   slug (auto-generated from the title if left blank), category, status
   (Draft / Published / Scheduled — the publish date/time field only
-  appears when Scheduled is picked), author, excerpt, featured image
-  upload, and a rich text (TipTap) editor with inline image upload.
+  appears when Scheduled is picked), featured image upload, and a rich
+  text (TipTap) editor with inline image upload. No author field (a single
+  club feed doesn't need a byline) and no manual excerpt field — the
+  card/meta-description summary is auto-derived from the start of the
+  body text on save (`extractExcerpt` in `src/lib/news/excerpt.ts`).
 - `/admin/news/categories` (**Categories**) — add, rename, reorder
   (sort order) and delete categories. Categories aren't a fixed list —
   admins manage them here; deleting one that still has articles assigned
