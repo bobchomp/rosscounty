@@ -1,10 +1,10 @@
 "use server";
 
-import DOMPurify from "isomorphic-dompurify";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/news/slug";
+import { sanitizeArticleHtml } from "@/lib/news/sanitize";
 
 function refresh() {
   revalidatePath("/admin/news");
@@ -33,7 +33,7 @@ function readArticleFields(formData: FormData) {
     slug: slugify(rawSlug || title),
     category_id: String(formData.get("category_id") || "") || null,
     excerpt: String(formData.get("excerpt") || "").trim() || null,
-    body_html: DOMPurify.sanitize(String(formData.get("body_html") || "")),
+    body_html: sanitizeArticleHtml(String(formData.get("body_html") || "")),
     author_name: String(formData.get("author_name") || "Ross County FC").trim() || "Ross County FC",
     status: String(formData.get("status") || "draft"),
     publish_at: (() => {
