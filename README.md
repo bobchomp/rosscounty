@@ -135,6 +135,22 @@ are always returned complete.
    you might need (only the currently-selected one has to be filled in to
    start syncing).
 
+**Caveat: the free API-Football plan doesn't cover the current season.**
+Hitting either sync button with the current season entered (e.g. `2025`)
+fails with:
+```
+API-Football error: {"plan":"Free plans do not have access to this season, try from 2022 to 2024."}
+```
+The free tier only serves historical seasons (2022–2024) — not live/current
+ones. To use the sync for real, current-season data you'll need a paid
+API-Football plan (check [api-football.com/pricing](https://www.api-football.com/pricing)
+for which tier includes the current season — not obvious from the plan
+names alone). Until then:
+- You can still confirm the sync buttons/upsert logic work by entering
+  `2023` as the season temporarily — just don't leave it there.
+- Manual entry via the "Add a fixture" / "League table" forms on the same
+  page works regardless of plan, and is the fallback either way.
+
 ## What's intentionally not done yet
 
 - No real club content (news, squads, ticket prices, etc.) — those pages
@@ -164,6 +180,9 @@ are always returned complete.
 - **Fixtures/results data**: does the club already have an Opta/Stats
   Perform feed via SPFL membership? If not, the API-Football sync + manual
   admin entry (see above) is the fallback.
+- **API-Football budget**: worth paying for a plan that covers the current
+  season, or is manual entry (free) good enough given how infrequently a
+  small club's fixtures/table actually change?
 - **Current competition**: which division is the club playing in right
   now — set this in `/admin/fixtures` once confirmed.
 - **News/squads content**: who will supply news articles and squad
