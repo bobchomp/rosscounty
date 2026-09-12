@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCompetitions, getFixtures, getLeagueTable, getSiteSettings } from "@/lib/fixtures/queries";
 import { SupabaseNotConfigured } from "@/components/admin/supabase-not-configured";
+import { SubmitButton } from "@/components/admin/submit-button";
+import { SaveDeleteButtons } from "@/components/admin/save-delete-buttons";
 import {
   addFixture,
   addTableRow,
@@ -107,9 +109,7 @@ export default async function AdminFixturesPage() {
             ))}
           </select>
 
-          <button type="submit" className={`mt-4 ${buttonClass}`}>
-            Save
-          </button>
+          <SubmitButton className={`mt-4 ${buttonClass}`}>Save</SubmitButton>
         </form>
       </section>
 
@@ -150,9 +150,7 @@ export default async function AdminFixturesPage() {
               className={`${inputClass} w-40`}
             />
           </div>
-          <button type="submit" className={buttonClass}>
-            Save
-          </button>
+          <SubmitButton className={buttonClass}>Save</SubmitButton>
         </form>
 
         <div className="mt-6 border-t border-neutral-100 pt-4">
@@ -173,9 +171,7 @@ export default async function AdminFixturesPage() {
                   defaultValue={competition.api_football_id ?? ""}
                   className={`${inputClass} w-32`}
                 />
-                <button type="submit" className={buttonClass}>
-                  Save
-                </button>
+                <SubmitButton className={buttonClass}>Save</SubmitButton>
               </form>
             ))}
           </div>
@@ -208,9 +204,9 @@ export default async function AdminFixturesPage() {
                     <input type="hidden" name="competition_id" value={currentCompetition.id} />
                     <input type="hidden" name="league_id" value={currentCompetition.api_football_id} />
                     <input type="hidden" name="season" value={settings.api_football_season} />
-                    <button type="submit" className={buttonClass}>
+                    <SubmitButton className={buttonClass} pendingText="Syncing…">
                       Pull latest league table
-                    </button>
+                    </SubmitButton>
                   </form>
                   <p className="mt-1 text-xs text-neutral-500">{formatSyncedAt(settings.table_last_synced_at)}</p>
                 </div>
@@ -222,9 +218,9 @@ export default async function AdminFixturesPage() {
                       <input type="hidden" name="league_id" value={currentCompetition.api_football_id} />
                       <input type="hidden" name="season" value={settings.api_football_season} />
                       <input type="hidden" name="team_id" value={settings.api_football_team_id} />
-                      <button type="submit" className={buttonClass}>
+                      <SubmitButton className={buttonClass} pendingText="Syncing…">
                         Pull latest fixtures
-                      </button>
+                      </SubmitButton>
                     </form>
                   ) : (
                     <p className="text-sm text-amber-800">
@@ -269,7 +265,7 @@ export default async function AdminFixturesPage() {
                 <label className={labelClass} htmlFor="ground">Ground (optional)</label>
                 <input id="ground" name="ground" className={inputClass} />
               </div>
-              <button type="submit" className={buttonClass}>Add fixture</button>
+              <SubmitButton className={buttonClass} pendingText="Adding…">Add fixture</SubmitButton>
             </form>
           </section>
 
@@ -321,12 +317,12 @@ export default async function AdminFixturesPage() {
                               placeholder="Opp."
                               className={`${inputClass} w-20`}
                             />
-                            <button formAction={updateFixtureResult} className={buttonClass}>
-                              Save
-                            </button>
-                            <button formAction={deleteFixture} className={dangerButtonClass}>
-                              Delete
-                            </button>
+                            <SaveDeleteButtons
+                              onSave={updateFixtureResult}
+                              onDelete={deleteFixture}
+                              saveClassName={buttonClass}
+                              deleteClassName={dangerButtonClass}
+                            />
                           </form>
                         </td>
                       </tr>
@@ -381,7 +377,7 @@ export default async function AdminFixturesPage() {
                 <label className={labelClass} htmlFor="points">Pts</label>
                 <input id="points" name="points" type="number" min={0} defaultValue={0} className={`${inputClass} w-14`} />
               </div>
-              <button type="submit" className={buttonClass}>Add row</button>
+              <SubmitButton className={buttonClass} pendingText="Adding…">Add row</SubmitButton>
             </form>
 
             {table.length === 0 ? (
@@ -418,8 +414,12 @@ export default async function AdminFixturesPage() {
                             <input name="goals_for" type="number" min={0} defaultValue={row.goals_for} className={`${inputClass} w-14`} />
                             <input name="goals_against" type="number" min={0} defaultValue={row.goals_against} className={`${inputClass} w-14`} />
                             <input name="points" type="number" min={0} defaultValue={row.points} className={`${inputClass} w-14`} />
-                            <button formAction={updateTableRow} className={buttonClass}>Save</button>
-                            <button formAction={deleteTableRow} className={dangerButtonClass}>Delete</button>
+                            <SaveDeleteButtons
+                              onSave={updateTableRow}
+                              onDelete={deleteTableRow}
+                              saveClassName={buttonClass}
+                              deleteClassName={dangerButtonClass}
+                            />
                           </form>
                         </td>
                       </tr>

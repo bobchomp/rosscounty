@@ -33,8 +33,10 @@ export function AdminShell({
     );
     return activeParent?.label ?? null;
   });
+  const [signingOut, setSigningOut] = useState(false);
 
   async function handleSignOut() {
+    setSigningOut(true);
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/admin/login");
@@ -128,9 +130,10 @@ export function AdminShell({
             <button
               type="button"
               onClick={handleSignOut}
-              className="rounded-md border border-club-navy/20 px-3 py-1.5 text-sm font-medium text-club-navy hover:bg-club-navy/5"
+              disabled={signingOut}
+              className="rounded-md border border-club-navy/20 px-3 py-1.5 text-sm font-medium text-club-navy hover:bg-club-navy/5 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Sign out
+              {signingOut ? "Signing out…" : "Sign out"}
             </button>
           </div>
         </header>

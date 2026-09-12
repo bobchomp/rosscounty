@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCategories, getCategoryArticleCounts } from "@/lib/news/queries";
 import { SupabaseNotConfigured } from "@/components/admin/supabase-not-configured";
+import { SubmitButton } from "@/components/admin/submit-button";
+import { SaveDeleteButtons } from "@/components/admin/save-delete-buttons";
 import { createCategory, deleteCategory, updateCategory } from "./actions";
 
 const inputClass =
@@ -53,9 +55,9 @@ export default async function AdminNewsCategoriesPage(
               className={`${inputClass} w-24`}
             />
           </div>
-          <button type="submit" className={buttonClass}>
+          <SubmitButton className={buttonClass} pendingText="Adding…">
             Add category
-          </button>
+          </SubmitButton>
         </form>
       </section>
 
@@ -92,12 +94,12 @@ export default async function AdminNewsCategoriesPage(
                   <span className="text-xs text-neutral-500">
                     {count} article{count === 1 ? "" : "s"}
                   </span>
-                  <button formAction={updateCategory} className={buttonClass}>
-                    Save
-                  </button>
-                  <button formAction={deleteCategory} className={dangerButtonClass}>
-                    Delete
-                  </button>
+                  <SaveDeleteButtons
+                    onSave={updateCategory}
+                    onDelete={deleteCategory}
+                    saveClassName={buttonClass}
+                    deleteClassName={dangerButtonClass}
+                  />
                 </form>
               );
             })}
