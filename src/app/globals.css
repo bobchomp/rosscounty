@@ -2,7 +2,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #21202f;
+  --foreground: #1f1d50;
 }
 
 @theme inline {
@@ -12,9 +12,9 @@
 
   /* Ross County FC placeholder brand palette — swap for official brand
      guidelines (Pantone/hex values, secondary colours) when supplied. */
-  --color-club-navy: #21202f;
-  --color-club-navy-dark: #17161f;
-  --color-club-navy-light: #3d3b52;
+  --color-club-navy: #1f1d50;
+  --color-club-navy-dark: #151436;
+  --color-club-navy-light: #383591;
   --color-club-gold: #f2b705;
   --color-club-gold-dark: #c99304;
 }
