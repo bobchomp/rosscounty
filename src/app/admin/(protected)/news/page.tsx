@@ -30,7 +30,7 @@ export default async function AdminNewsPage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-club-navy">News</h1>
+          <h1 className="text-2xl font-bold text-club-navy">Articles</h1>
           <p className="mt-1 text-sm text-neutral-600">
             Articles shown on the public News page, newest edited first.
           </p>

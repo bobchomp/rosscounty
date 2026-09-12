@@ -1,6 +1,7 @@
 export type NavLink = {
   label: string;
   href: string;
+  children?: NavLink[];
 };
 
 // Primary public site navigation. Shop is a route handler that redirects
@@ -19,7 +20,14 @@ export const siteNav: NavLink[] = [
 
 export const adminNav: NavLink[] = [
   { label: "Dashboard", href: "/admin" },
-  { label: "News", href: "/admin/news" },
+  {
+    label: "News",
+    href: "/admin/news",
+    children: [
+      { label: "Articles", href: "/admin/news" },
+      { label: "Categories", href: "/admin/news/categories" },
+    ],
+  },
   { label: "Fixtures & Results", href: "/admin/fixtures" },
   { label: "Squads", href: "/admin/squads" },
   { label: "Tickets", href: "/admin/tickets" },

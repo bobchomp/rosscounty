@@ -1,9 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { adminNav } from "@/lib/nav";
+import { adminNav, type NavLink } from "@/lib/nav";
 import { createClient } from "@/lib/supabase/client";
+
+function isActive(pathname: string, href: string) {
+  if (href === "/admin") return pathname === "/admin";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function mostSpecificActiveChild(pathname: string, children: NavLink[]) {
+  return [...children]
+    .sort((a, b) => b.href.length - a.href.length)
+    .find((child) => isActive(pathname, child.href));
+}
 
 export function AdminShell({
   userEmail,
@@ -14,6 +26,13 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const [openLabel, setOpenLabel] = useState<string | null>(() => {
+    const activeParent = adminNav.find(
+      (item) => item.children && mostSpecificActiveChild(pathname, item.children)
+    );
+    return activeParent?.label ?? null;
+  });
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -32,20 +51,64 @@ export function AdminShell({
           <p className="mt-1 text-lg font-semibold">Admin Panel</p>
         </div>
         <nav className="flex-1 space-y-1 px-3">
-          {adminNav.map((link) => {
-            const active =
-              link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
+          {adminNav.map((item) => {
+            if (item.children) {
+              const isOpen = openLabel === item.label;
+              const activeChild = mostSpecificActiveChild(pathname, item.children);
+
+              return (
+                <div key={item.label}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenLabel(isOpen ? null : item.label)}
+                    aria-expanded={isOpen}
+                    className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+                      activeChild
+                        ? "bg-white/10 text-white"
+                        : "text-white/70 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    {item.label}
+                    <span
+                      className={`text-xs transition-transform ${isOpen ? "rotate-90" : ""}`}
+                      aria-hidden
+                    >
+                      ›
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="mt-1 ml-3 space-y-1 border-l border-white/10 pl-3">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={`block rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                            child === activeChild
+                              ? "bg-white/10 text-white"
+                              : "text-white/70 hover:bg-white/5 hover:text-white"
+                          }`}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            const active = isActive(pathname, item.href);
             return (
               <Link
-                key={link.href}
-                href={link.href}
+                key={item.href}
+                href={item.href}
                 className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                   active
                     ? "bg-white/10 text-white"
                     : "text-white/70 hover:bg-white/5 hover:text-white"
                 }`}
               >
-                {link.label}
+                {item.label}
               </Link>
             );
           })}

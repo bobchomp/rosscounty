@@ -159,14 +159,21 @@ names alone). Until then:
 
 ## News
 
-Full CMS for news articles, with individual pages per article:
+Full CMS for news articles, with individual pages per article. The **News**
+item in the admin sidebar is a dropdown with two sub-pages:
 
-- `/admin/news` — list of all articles (draft/scheduled/published, newest
-  edited first), with a **New article** button.
+- `/admin/news` (**Articles**) — list of all articles
+  (draft/scheduled/published, newest edited first), with a **New article**
+  button.
 - `/admin/news/new` and `/admin/news/[id]/edit` — a shared form: title,
   slug (auto-generated from the title if left blank), category, status
   (draft/published), publish date/time, author, excerpt, featured image
   upload, and a rich text (TipTap) editor with inline image upload.
+- `/admin/news/categories` (**Categories**) — add, rename, reorder
+  (sort order) and delete categories. Categories aren't a fixed list —
+  admins manage them here; deleting one that still has articles assigned
+  is blocked with a message telling you how many, rather than either
+  silently orphaning those articles or crashing.
 - `/news` — public list, filterable by category pill.
 - `/news/[slug]` — public article page.
 
@@ -233,8 +240,5 @@ A few things worth knowing about how this is wired up:
   now — set this in `/admin/fixtures` once confirmed.
 - **News/squads content**: who will supply news articles and squad
   photos/bios?
-- **News categories**: the four seeded categories (Club News, Match Report,
-  Press Release, Interview) are a starting guess — confirm these match how
-  the club actually wants to organise articles.
 - **Admin users**: who needs admin access, and do they need different
   permission levels (e.g. editor vs. full admin)?

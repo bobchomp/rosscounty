@@ -56,6 +56,19 @@ export async function getPublishedArticleBySlug(
   return data as unknown as NewsArticleWithCategory | null;
 }
 
+export async function getCategoryArticleCounts(
+  supabase: SupabaseClient
+): Promise<Record<string, number>> {
+  const { data, error } = await supabase.from("news_articles").select("category_id");
+  if (error) throw new Error(error.message);
+
+  const counts: Record<string, number> = {};
+  for (const row of data ?? []) {
+    if (row.category_id) counts[row.category_id] = (counts[row.category_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
 export async function getAllArticlesForAdmin(
   supabase: SupabaseClient
 ): Promise<NewsArticleWithCategory[]> {
