@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -33,8 +34,10 @@ export function AdminShell({
     );
     return activeParent?.label ?? null;
   });
+  const [signingOut, setSigningOut] = useState(false);
 
   async function handleSignOut() {
+    setSigningOut(true);
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/admin/login");
@@ -44,11 +47,20 @@ export function AdminShell({
   return (
     <div className="flex min-h-full flex-1">
       <aside className="hidden w-64 shrink-0 flex-col bg-club-navy-dark text-white lg:flex">
-        <div className="px-6 py-6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-club-gold">
-            Ross County FC
-          </p>
-          <p className="mt-1 text-lg font-semibold">Admin Panel</p>
+        <div className="flex items-center gap-3 px-6 py-6">
+          <Image
+            src="/MainLogo.png"
+            alt="Ross County Football Club crest"
+            width={32}
+            height={47}
+            className="h-8 w-auto"
+          />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-club-gold">
+              Ross County FC
+            </p>
+            <p className="mt-1 text-lg font-semibold">Admin Panel</p>
+          </div>
         </div>
         <nav className="flex-1 space-y-1 px-3">
           {adminNav.map((item) => {
@@ -128,9 +140,10 @@ export function AdminShell({
             <button
               type="button"
               onClick={handleSignOut}
-              className="rounded-md border border-club-navy/20 px-3 py-1.5 text-sm font-medium text-club-navy hover:bg-club-navy/5"
+              disabled={signingOut}
+              className="rounded-md border border-club-navy/20 px-3 py-1.5 text-sm font-medium text-club-navy hover:bg-club-navy/5 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Sign out
+              {signingOut ? "Signing out…" : "Sign out"}
             </button>
           </div>
         </header>

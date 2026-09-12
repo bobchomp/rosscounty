@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -35,7 +36,15 @@ export default function AdminLoginPage() {
   return (
     <div className="flex min-h-full flex-1 items-center justify-center bg-club-navy px-4 py-16">
       <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-lg">
-        <p className="text-sm font-semibold uppercase tracking-wide text-club-gold-dark">
+        <Image
+          src="/MainLogo.png"
+          alt="Ross County Football Club crest"
+          width={48}
+          height={70}
+          className="h-12 w-auto"
+          priority
+        />
+        <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-club-gold-dark">
           Ross County FC
         </p>
         <h1 className="mt-1 text-2xl font-bold text-club-navy">Admin sign in</h1>

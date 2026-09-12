@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { siteNav } from "@/lib/nav";
@@ -11,10 +12,14 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-club-navy-light/20 bg-club-navy text-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
-          {/* Placeholder crest — replace with the club badge SVG/PNG. */}
-          <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-club-gold text-sm font-bold">
-            RCFC
-          </span>
+          <Image
+            src="/MainLogo.png"
+            alt="Ross County Football Club crest"
+            width={40}
+            height={58}
+            className="h-10 w-auto"
+            priority
+          />
           <span className="text-lg font-semibold tracking-wide">
             Ross County Football Club
           </span>

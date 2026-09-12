@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { siteNav } from "@/lib/nav";
 
@@ -7,7 +8,16 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <p className="text-lg font-semibold text-white">Ross County Football Club</p>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/MainLogo.png"
+                alt="Ross County Football Club crest"
+                width={32}
+                height={47}
+                className="h-8 w-auto"
+              />
+              <p className="text-lg font-semibold text-white">Ross County Football Club</p>
+            </div>
             <p className="mt-2 max-w-xs text-sm">
               Placeholder site in development. Club address, contact details
               and social links to be added.

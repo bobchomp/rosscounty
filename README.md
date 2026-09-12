@@ -217,8 +217,11 @@ A few things worth knowing about how this is wired up:
 - No real club content (squads, ticket prices, etc.) — those pages are
   still labelled placeholders. Fixtures & League Table and News are
   functional (see above) but have no real data entered.
-- No club branding assets (crest, brand fonts/colours beyond a navy/gold
-  placeholder palette, photography) — see "Open questions" below.
+- The official crest (`public/MainLogo.png`) is now in place — site header,
+  site footer, admin sidebar, admin login screen, and the browser tab icon
+  (`src/app/icon.png`) all reference the same unaltered file. Brand fonts
+  and colours are still just a navy/gold placeholder palette, and there's
+  no other club photography yet — see "Open questions" below.
 - Other admin CRUD screens (Squads, Tickets, Club, Commercial, Hospitality)
   are placeholders; only Fixtures & Results, News, auth and navigation are
   wired up. Settings itself is still a placeholder — the current-competition
@@ -234,8 +237,8 @@ A few things worth knowing about how this is wired up:
 
 ## Open questions for the club / before going further
 
-- **Branding**: official crest (SVG/PNG), brand colour codes, any existing
-  style guide, preferred imagery/photography.
+- **Branding**: official crest is now in place; still need brand colour
+  codes, any existing style guide, preferred imagery/photography.
 - **Domain**: the real domain name to use for the public site and the
   `admin.` subdomain.
 - **Shop**: the Shopify store URL for the `/shop` redirect.

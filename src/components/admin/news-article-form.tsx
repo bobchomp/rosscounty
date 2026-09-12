@@ -1,5 +1,6 @@
 import { RichTextEditor } from "./rich-text-editor";
 import { ArticleStatusFields } from "./article-status-fields";
+import { SubmitButton } from "./submit-button";
 import { getDisplayStatus } from "@/lib/news/status";
 import type { NewsArticleWithCategory, NewsCategory } from "@/lib/news/types";
 
@@ -100,9 +101,12 @@ export function NewsArticleForm({
         </div>
       </div>
 
-      <button type="submit" className={buttonClass}>
+      <SubmitButton
+        className={buttonClass}
+        pendingText={article ? "Saving…" : "Creating…"}
+      >
         {article ? "Save changes" : "Create article"}
-      </button>
+      </SubmitButton>
     </form>
   );
 }

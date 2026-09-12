@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAllArticlesForAdmin, getPublicImageUrl } from "@/lib/news/queries";
 import { getArticleStatusLabel } from "@/lib/news/status";
 import { SupabaseNotConfigured } from "@/components/admin/supabase-not-configured";
+import { SubmitButton } from "@/components/admin/submit-button";
 import { deleteArticle } from "./actions";
 
 const buttonClass =
@@ -85,9 +86,9 @@ export default async function AdminNewsPage() {
                   </Link>
                   <form action={deleteArticle}>
                     <input type="hidden" name="id" value={article.id} />
-                    <button type="submit" className={dangerButtonClass}>
+                    <SubmitButton className={dangerButtonClass} pendingText="Deleting…">
                       Delete
-                    </button>
+                    </SubmitButton>
                   </form>
                 </div>
               </div>
